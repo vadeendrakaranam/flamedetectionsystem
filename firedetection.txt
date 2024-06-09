@@ -1,0 +1,78 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define FLAME_SENSOR_PIN A0
+#define LED_PIN 9
+#define BUZZER_PIN 8
+
+unsigned long previousMillis = 0; // Stores the last time the LED was updated
+const long interval = 500; // Interval at which to blink (milliseconds)
+
+bool ledState = LOW; // LED state
+bool fireDetected = false;
+
+void setup() {
+  pinMode(FLAME_SENSOR_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.print("Fire Detection System");
+  display.println("\n\nBy Vadeendra");
+  display.display();
+  delay(1000);
+  display.clearDisplay();
+}
+
+void loop() {
+  int flameSensorValue = analogRead(FLAME_SENSOR_PIN);
+  unsigned long currentMillis = millis();
+
+  if (flameSensorValue < 300) { // Adjust the threshold value according to your flame sensor's sensitivity
+    if (!fireDetected) {
+      fireDetected = true;
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.print("Fire is Detected!");
+      display.display();
+    }
+
+    digitalWrite(BUZZER_PIN, HIGH);
+
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis; // Save the last time you blinked the LED
+      ledState = !ledState; // Toggle the LED state
+      digitalWrite(LED_PIN, ledState);
+    }
+  } else {
+    if (fireDetected) {
+      fireDetected = false;
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.print("Fire Detection System");
+      display.setCursor(0, 10);
+      display.print("By K.Vadeendra");
+      display.display();
+    }
+
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(BUZZER_PIN, LOW);
+    ledState = LOW;
+  }
+}
